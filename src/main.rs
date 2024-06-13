@@ -2,14 +2,18 @@
 
 mod inject;
 mod button;
+mod fetch_dll;
+mod fonts;
 
 use std::default::Default;
 use eframe::egui::{self, CentralPanel, Context, ViewportCommand, Label, TextEdit, Button, Id, RichText};
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::{Arc,Mutex};
 
 
 use eframe::Frame;
 use crate::button::RunButton;
+use crate::fonts::{font_exists, install_font};
 
 
 #[derive(Eq, PartialEq)]
@@ -24,6 +28,7 @@ struct App {
     dll_path: String,
     sender: Sender<(String, String)>,
     state: LoadingState,
+
 }
 
 impl App {
@@ -44,14 +49,23 @@ impl eframe::App for App {
             ui.centered_and_justified(|ui| {
                 let id = Id::new("buttonId");
 
-
+                
                 match self.state {
                     LoadingState::UNINJECTED => {
                         if run_button.draw_button(ui, "Run", id) {
                             let exe_name = self.exe_name.clone();
                             let dll_path = self.dll_path.clone();
                             // self.sender.send((exe_name, dll_path)).unwrap();
-                            self.state = LoadingState::INJECTING;
+                            // self.state = LoadingState::INJECTING;
+                            let font_name = "EmojiFontThatWeDontHave";
+                            if font_exists(font_name) {
+                                println!("The font '{}' is installed.", font_name);
+                            }else {
+                                println!("The font '{}' is not installed.", font_name);
+                               std::thread::spawn(move|| {
+                                   install_font();
+                               });
+                            }
                         }
                     }
                     LoadingState::INJECTING => {
